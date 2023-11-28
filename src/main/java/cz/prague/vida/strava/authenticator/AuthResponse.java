@@ -1,15 +1,35 @@
 package cz.prague.vida.strava.authenticator;
 
 
+import com.google.gson.annotations.SerializedName;
 import cz.prague.vida.strava.entities.Athlete;
 
 public class AuthResponse {
-    String access_token;
+    @SerializedName("access_token")
+    String accessToken;
     Athlete athlete;
 
-    public String getAccess_token() { return access_token; }
-    public void setAccess_token(String token) { this.access_token = token; }
+    public String getAccessToken() {
+        return accessToken;
+    }
 
-    public Athlete getAthlete() { return athlete; }
-    public void setAthlete() { this.athlete = athlete; }
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+    }
+
+    public Athlete getAthlete() {
+        return athlete;
+    }
+
+    public void setAthlete(Athlete athlete) {
+        this.athlete = athlete;
+    }
+
+    @Override
+    public String toString() {
+        return "AuthResponse{" +
+                "accessToken='" + accessToken + '\'' +
+                ", athlete=" + athlete +
+                '}';
+    }
 }
