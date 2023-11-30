@@ -5,6 +5,7 @@ import cz.prague.vida.strava.authenticator.RefreshTokenResponse;
 import cz.prague.vida.strava.entities.*;
 import cz.prague.vida.strava.model.DetailedActivity;
 import cz.prague.vida.strava.model.DetailedAthlete;
+import lombok.Data;
 
 import java.io.*;
 import java.net.*;
@@ -24,27 +25,75 @@ public class StravaV3Client implements StravaClient {
 	private DetailedAthlete currentAthlete;
 	private Gson gson = new Gson();
 
+	private Proxy proxy;
+
+	private ProxySelector proxySelector;
+
 	private StravaV3Client(Builder builder) throws URISyntaxException, InterruptedException, IOException {
+		this.proxy = builder.proxy;
+		this.proxySelector = builder.getProxySelector();
 		Map<String, String> formData = new HashMap<>();
 		formData.put("client_id", builder.getClientId());
 		formData.put("client_secret", builder.getClientSecret());
 		formData.put("grant_type", "refresh_token");
 		formData.put("refresh_token", builder.getRefreshToken());
-
 		HttpRequest request = HttpRequest.newBuilder()
 				.uri(new URI("https://www.strava.com/api/v3/oauth/token"))
 				.timeout(Duration.of(10, SECONDS))
 				.POST(HttpRequest.BodyPublishers.ofString(getFormDataAsString(formData)))
 				.build();
-
-		ProxySelector proxy = ProxySelector.of(new InetSocketAddress("192.168.6.180", 3128));
 		HttpResponse<String> response = HttpClient
 				.newBuilder()
-				.proxy(proxy)
+				.proxy(proxySelector)
 				.build()
 				.send(request, HttpResponse.BodyHandlers.ofString());
 		RefreshTokenResponse activity = gson.fromJson(response.body(), RefreshTokenResponse.class);
 		this.accessToken = activity.getAccessToken();
+	}
+
+	@Data
+	public static class Builder {
+		private String clientId;
+		private String clientSecret;
+		private String refreshToken;
+		private Proxy proxy;
+		private ProxySelector proxySelector;
+
+		private Builder() {
+		}
+
+		public static Builder newInstance() {
+			return new Builder();
+		}
+
+		public Builder withClientId(String clientId) {
+			this.clientId = clientId;
+			return this;
+		}
+
+		public Builder withClientSecret(String clientSecret) {
+			this.clientSecret = clientSecret;
+			return this;
+		}
+
+		public Builder withRefreshToken(String refreshToken) {
+			this.refreshToken = refreshToken;
+			return this;
+		}
+
+		public Builder withProxy(Proxy proxy) {
+			this.proxy = proxy;
+			return this;
+		}
+
+		public Builder withProxySelector(ProxySelector proxySelector) {
+			this.proxySelector = proxySelector;
+			return this;
+		}
+
+		public StravaV3Client build() throws IOException, URISyntaxException, InterruptedException {
+			return new StravaV3Client(this);
+		}
 	}
 
 	public String getAccessToken() {
@@ -788,62 +837,6 @@ public class StravaV3Client implements StravaClient {
 		return formBodyBuilder.toString();
 	}
 
-	public static class Builder {
-		private String clientId;
-		private String clientSecret;
-		private String refreshToken;
-
-		private Builder() {
-		}
-
-		public static Builder newInstance() {
-			return new Builder();
-		}
-
-		public Builder withClientId(String clientId) {
-			this.clientId = clientId;
-			return this;
-		}
-
-		public Builder withClientSecret(String clientSecret) {
-			this.clientSecret = clientSecret;
-			return this;
-		}
-
-		public Builder withRefreshToken(String refreshToken) {
-			this.refreshToken = refreshToken;
-			return this;
-		}
-
-		public StravaV3Client build() throws IOException, URISyntaxException, InterruptedException {
-			return new StravaV3Client(this);
-		}
-
-		public String getClientId() {
-			return clientId;
-		}
-
-		public void setClientId(String clientId) {
-			this.clientId = clientId;
-		}
-
-		public String getClientSecret() {
-			return clientSecret;
-		}
-
-		public void setClientSecret(String clientSecret) {
-			this.clientSecret = clientSecret;
-		}
-
-		public String getRefreshToken() {
-			return refreshToken;
-		}
-
-		public void setRefreshToken(String refreshToken) {
-			this.refreshToken = refreshToken;
-		}
-	}
-
 	private String getExtension(String fileName) {
 		String extension = "";
 
@@ -940,7 +933,6 @@ public class StravaV3Client implements StravaClient {
 
 		try {
 			URL url = new URL(URL);
-			Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("192.168.6.180", 3128));
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection(proxy);
 			conn.setRequestMethod("GET");
 			conn.setRequestProperty("Accept", "application/json");

@@ -8,6 +8,9 @@ import org.junit.jupiter.api.Test;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.ProxySelector;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Properties;
@@ -47,10 +50,14 @@ public class StravaV3ClientTest {
 		Properties properties = new Properties();
 		properties.load(new BufferedReader(new FileReader("application-secret.properties")));
 		athleteId = Integer.parseInt(properties.getProperty("athleteId"));
+		String proxyIp = properties.getProperty("proxyIp");
+		String proxyPort = properties.getProperty("proxyPort");
 		strava = StravaV3Client.Builder.newInstance()
 				.withClientId(properties.getProperty("clientId"))
 				.withClientSecret(properties.getProperty("clientSecret"))
 				.withRefreshToken(properties.getProperty("refreshToken"))
+				.withProxy(proxyIp != null ? new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyIp, Integer.parseInt(proxyPort))) : null)
+				.withProxySelector(proxyIp != null ? ProxySelector.of(new InetSocketAddress(proxyIp, Integer.parseInt(proxyPort))) : null)
 				.build();
 	}
 
